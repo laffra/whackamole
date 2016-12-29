@@ -22,7 +22,7 @@
             }
         }
     }
-
+    var fbDivCount = 0;
     function run() {
         $('iframe').each(hide);
         $('img.img_ad').each(hide);
@@ -39,7 +39,65 @@
         $('span:contains("Suggested Post")').parent().parent().parent().parent().each(hide);
         $('img[src*="googlesindication"]').each(hide);
         $('.ad-container').each(hide);
-    };
+        if (domain == 'www.facebook.com') facebook();
+    }
+    function facebook() {
+        $('#mainContainer #contentCol #rightCol').each(hide);
+        $('#mainContainer #leftCol').each(hide);
+        $('.fbChatSidebar').each(hide);
+        $('#contentCol div').each(function() {
+            var div = $(this);
+            if (div.attr('data-fte') === '1') {
+                if (!div.attr('whack-fb-col')) {
+                    div.attr('whack-fb-col', '0');
+                    div.attr('whack-fb-index', fbDivCount);
+                    switch (fbDivCount % 3) {
+                        case 1:
+                            console.log('move to column 1: ' + fbDivCount)
+                            $('#whack-col-1').append(div);
+                            break
+                        case 2:
+                            console.log('move to column 2: ' + fbDivCount)
+                            $('#whack-col-2').append(div);
+                            break
+                    }
+                    fbDivCount++;
+                }
+            }
+        });
+    }
+    if (domain == 'www.facebook.com') {
+        function setup() {
+            $('#whack-col-1').remove();
+            $('#whack-col-2').remove();
+            $('#mainContainer').append(
+                $('<div>')
+                    .attr('id', 'whack-col-1')
+                    .css('position', 'absolute')
+                    .css('overflow', 'hidden')
+                    .css('top', '11px')
+                    .css('left', '365px')
+                    .css('width', '500px'),
+                $('<div>')
+                    .attr('id', 'whack-col-2')
+                    .css('position', 'absolute')
+                    .css('overflow', 'hidden')
+                    .css('top', '11px')
+                    .css('left', '880px')
+                    .css('width', '500px')
+            );
+            $('#contentCol')
+                .css('position', 'absolute')
+                .css('overflow', 'hidden')
+                .css('top', '0px')
+                .css('width', '500px')
+                .css('left', '-340px');
+        }
+        $("span:contains('More Stories')").trigger('click');
+        setup();
+        $(window).resize(setup);
+        setInterval(facebook, 10000);
+    }
 
     function sameDomain(url) {
         var hostname = url.split('/')[2];
