@@ -23,9 +23,10 @@
             }
         }
     }
-    
+
     function run() {
         $('iframe').each(hide);
+        $('.video-ads').each(hide);
     }
     
     function sameDomain(url) {
