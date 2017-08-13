@@ -2,7 +2,7 @@
   "name": "WhackAMole",
   "short_name": "WhackAMole",
   "description": "WhackAMole Frames",
-  "version": "1.6",
+  "version": "1.7",
   "permissions": [ "activeTab", "storage" ],
   "author": "Chris Laffra - laffra@google.com",
   "content_scripts" : [
