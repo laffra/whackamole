@@ -6,27 +6,48 @@
         if (!mole.attr('whacked')) {
             var url = mole.attr('src') || mole.attr('data') || mole.attr('href') || '';
             if (!url || !sameDomain(url)) {
+                console.log('Whackamole: whacked ' + url);
                 mole.attr('whacked', true);
                 var hostname = url && url.split('/')[2];
                 if (!hostname || hostname.indexOf('.') == -1) hostname = '';
                 while (mole.parent().children().length == 1) { mole = mole.parent(); }
-                mole.css('visibility', 'hidden').empty();
-                var wrapper = $('<div>').css('width', '0').css('height', '0');
-                mole.animate(
-                    {width: '0px', height: '0px'},
-                    1,
-                    function() {
-                        mole.replaceWith(wrapper);
-                        wrapper.append(mole);
-                    }
-                );
+                var wrapper = $('<div>')
+                    .css('overflow', 'hidden')
+                    .css('margin-top', '-2px')
+                    .css('margin-left', '-2px')
+                    .css('width', '2px')
+                    .css('height', '2px');
+                mole.replaceWith(wrapper);
+                wrapper.append(mole);
+            } else {
+                console.log('Whackamole: cannot whack ' + url);
             }
         }
     }
 
+    function hide_nested(parentClass, tagName, content) {
+        $('.' + parentClass + ' ' + tagName).each(function() {
+            var text = getComputedStyle(this,':after').content + ' ' + $(this).text();
+            if (text.indexOf(content) != -1) {
+                $(this).closest('.' + parentClass).each(hide);
+            }
+        })
+    }
+
     function run() {
         $('iframe').each(hide);
-        $('.video-ads').each(hide);
+        $('.taboola').each(hide);
+        $('.OUTBRAIN').each(hide);
+        $('.advertoriallist').each(hide);
+        $('.js-stream-ad').each(hide);
+        $('.col--advertisement').each(hide);
+        $('.ad-container').closest('.ad-container').each(hide);
+        hide_nested('userContentWrapper', 'span', 'Suggested Post');
+        hide_nested('userContentWrapper', 'a', 'Travel List Challenge');
+        hide_nested('userContentWrapper', 'a', 'Sponsored');
+        hide_nested('ego_section', 'a', 'Sponsored');
+        hide_nested('tweet', 'a', 'Promoted');
+        hide_nested('ember-view', 'span', 'Promoted');
     }
     
     function sameDomain(url) {
@@ -42,11 +63,11 @@
 
     function whack() {
         clearTimeout(timer);
-        timer = setTimeout(run, 10);
+        timer = setTimeout(run, 1);
     }
 
     chrome.storage.sync.get(domain, function(disabled) {
-        if (!disabled[domain]) {
+        if (domain != 'localhost' && !disabled[domain]) {
             document.body.addEventListener('DOMSubtreeModified', whack);
             run();
         }

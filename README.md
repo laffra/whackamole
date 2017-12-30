@@ -1,3 +1,3 @@
 # whackamole
 
-A very simple Flash and iframe blocker extension for Chrome
+An ad blocker extension for Chrome that never connects to a server.
