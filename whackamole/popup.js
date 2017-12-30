@@ -1,4 +1,5 @@
 var link = document.getElementById('link');
+var support = document.getElementById('support');
 var domain = '???';
 var disabled = {};
 
@@ -23,9 +24,16 @@ runInTab(function(tab) {
 link.addEventListener("click", function() {
   disabled[domain] = disabled[domain] != true;
   chrome.storage.sync.set(disabled, function() {
-    runInTab(function(tab) { 
+    runInTab(function(tab) {
       chrome.tabs.executeScript(tab.id, {code: 'window.location.reload();'});
       window.close();
     });
+  });
+});
+
+support.addEventListener("click", function() {
+  runInTab(function(tab) {
+    chrome.tabs.executeScript(tab.id, {code: 'window.open("http://chrislaffra.com/whackamole");'});
+    window.close();
   });
 });
