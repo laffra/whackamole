@@ -1,6 +1,6 @@
 (function WhackAMole() {
     var domain = document.location.hostname;
-    
+
     function hide() {
         var mole = $(this);
         if (!mole.attr('whacked')) {
@@ -49,7 +49,7 @@
         hide_nested('tweet', 'a', 'Promoted');
         hide_nested('ember-view', 'span', 'Promoted');
     }
-    
+
     function sameDomain(url) {
         var hostname = url.split('/')[2];
         if (url.charAt(0) != '/' && hostname) {
@@ -66,10 +66,14 @@
         timer = setTimeout(run, 1);
     }
 
-    chrome.storage.sync.get(domain, function(disabled) {
-        if (domain != 'localhost' && !disabled[domain]) {
-            document.body.addEventListener('DOMSubtreeModified', whack);
-            run();
-        }
-    });
+    if (domain != 'localhost') {
+        chrome.storage.sync.get('*', function(disabled) {
+            if (disabled['*']) return;
+            chrome.storage.sync.get(domain, function(disabled) {
+                if (disabled[domain]) return;
+                document.body.addEventListener('DOMSubtreeModified', whack);
+                run();
+            });
+        });
+    }
 })();

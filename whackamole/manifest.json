@@ -2,7 +2,7 @@
   "name": "WhackAMole Ad-Blocker",
   "short_name": "WhackAMole",
   "description": "WhackAMole Ad-Blocker",
-  "version": "1.13",
+  "version": "1.14",
   "permissions": [ "activeTab", "storage" ],
   "author": "Chris Laffra - laffra@google.com",
   "content_scripts" : [
@@ -11,7 +11,7 @@
       "js" : [ "jquery.js", "contentscript.js" ],
       "all_frames" : true
     }
-  ], 
+  ],
   "background": { "scripts": ["background.js"] },
   "page_action": {
     "default_icon": { "38": "cross.png" },
