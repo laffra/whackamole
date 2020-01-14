@@ -1,5 +1,6 @@
 (function WhackAMole() {
     var domain = document.location.hostname;
+    var color = "#FF0000"
 
     function hide() {
         var mole = $(this);
@@ -25,29 +26,49 @@
         }
     }
 
-    function hide_nested(parentClass, tagName, content) {
-        $('.' + parentClass + ' ' + tagName).each(function() {
+    function closeYoutubeAd() {
+        $('div:contains("Skip Ad")').each(function () {
+            $(this).click();
+            setTimeout(function () {
+                $('button[title="Play (k)"]').click();
+            }, 200);
+        });
+        $("button.ytp-ad-overlay-close-button").click();
+    }
+
+    function hide_nested(parent, child, content, height) {
+        $(parent + ' ' + child).each(function() {
             var text = getComputedStyle(this,':after').content + ' ' + $(this).text();
             if (text.indexOf(content) != -1) {
-                $(this).closest('.' + parentClass).each(hide);
+                if (height) {
+                    $(this).closest(parent).css('height', height);
+                } else {
+                    $(this).closest(parent).each(hide);
+                }
             }
         })
     }
 
     function run() {
+        console.log("Whackamole run");
         $('iframe').each(hide);
         $('.taboola').each(hide);
+        $('.video-ads').each(hide);
         $('.OUTBRAIN').each(hide);
         $('.advertoriallist').each(hide);
         $('.js-stream-ad').each(hide);
         $('.col--advertisement').each(hide);
         $('.ad-container').closest('.ad-container').each(hide);
-        hide_nested('userContentWrapper', 'span', 'Suggested Post');
-        hide_nested('userContentWrapper', 'a', 'Travel List Challenge');
-        hide_nested('userContentWrapper', 'a', 'Sponsored');
-        hide_nested('ego_section', 'a', 'Sponsored');
-        hide_nested('tweet', 'a', 'Promoted');
-        hide_nested('ember-view', 'span', 'Promoted');
+
+        hide_nested('.userContentWrapper', 'span', 'Suggested Post');
+        hide_nested('.userContentWrapper', 'a', 'Travel List Challenge');
+        hide_nested('.userContentWrapper', 'a', 'Sponsored');
+        hide_nested('.ego_section', 'a', 'Sponsored');
+        hide_nested('.tweet', 'a', 'Promoted');
+        hide_nested('.ember-view', 'span', 'Promoted');
+        hide_nested('article', 'span', 'Promoted', "10px");
+
+        closeYoutubeAd();
     }
 
     function sameDomain(url) {
