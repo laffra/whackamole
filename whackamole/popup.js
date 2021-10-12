@@ -41,13 +41,25 @@ site_link.addEventListener("click", function () {
   toggle(domain);
 });
 
-function toggle(target) {
-  disabled[target] = disabled[target] != true;
-  chrome.storage.sync.set(disabled, function() {
+function reload() {
     runInTab(function(tab) {
       chrome.tabs.executeScript(tab.id, {code: 'window.location.reload();'});
       window.close();
     });
+}
+
+function toggle(target) {
+  disabled[target] = disabled[target] != true;
+  chrome.storage.sync.set(disabled, function() {
+      if (chrome.runtime.lastError) {
+        chrome.storage.sync.clear(function() {
+            chrome.storage.sync.set(disabled, function() {
+                reload();
+            });
+        });
+      } else {
+          reload();
+      }
   });
 }
 

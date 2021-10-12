@@ -2,7 +2,7 @@
   "name": "WhackAMole Ad-Blocker",
   "short_name": "WhackAMole",
   "description": "WhackAMole Ad-Blocker",
-  "version": "1.16",
+  "version": "1.18",
   "permissions": [ "activeTab", "storage" ],
   "author": "Chris Laffra - laffra@google.com",
   "content_scripts" : [

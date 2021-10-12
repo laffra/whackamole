@@ -2,26 +2,44 @@
     var domain = document.location.hostname;
     var color = "#FF0000"
 
+    function createWrapper(mole, handler) {
+        return $('<whackamole>')
+            .css({
+                overflow: 'hidden',
+                display: 'block',
+                width: mole.width(),
+                height: '14px',
+                fontSize: '10px',
+                fontFamily: 'arial',
+                textAlign: 'center',
+                lineHeight: '14px',
+                color: 'grey',
+                cursor: 'pointer',
+            })
+            .text("ad")
+            .on("click", handler)
+    }
+
     function hide() {
         var mole = $(this);
-        if (!mole.attr('whacked')) {
+        if (mole.width() && mole.height() && !mole.attr('whacked')) {
             var url = mole.attr('src') || mole.attr('data') || mole.attr('href') || '';
             if (!url || !sameDomain(url)) {
-                console.log('Whackamole: whacked ' + url);
+                log(' - hide ' + (url || 'iframe'));
                 mole.attr('whacked', true);
                 var hostname = url && url.split('/')[2];
                 if (!hostname || hostname.indexOf('.') == -1) hostname = '';
                 while (mole.parent().children().length == 1) { mole = mole.parent(); }
-                var wrapper = $('<div>')
-                    .css('overflow', 'hidden')
-                    .css('margin-top', '-2px')
-                    .css('margin-left', '-2px')
-                    .css('width', '2px')
-                    .css('height', '2px');
+                var wrapper = createWrapper(mole, function() {
+                    wrapper.replaceWith(mole);
+                    setTimeout(function() {
+                        mole.css({
+                            position: 'initial',
+                        })
+                    },1000);
+                });
                 mole.replaceWith(wrapper);
                 wrapper.append(mole);
-            } else {
-                console.log('Whackamole: cannot whack ' + url);
             }
         }
     }
@@ -38,19 +56,33 @@
 
     function hide_nested(parent, child, content, height) {
         $(parent + ' ' + child).each(function() {
+            const mole = $(this).closest(parent);
+            if (mole.attr("whacked")) return;
             var text = getComputedStyle(this,':after').content + ' ' + $(this).text();
-            if (text.indexOf(content) != -1) {
+            if (text.match(content)) {
                 if (height) {
-                    $(this).closest(parent).css('height', height);
+                    const originalHeight = mole.height();
+                    const wrapper = createWrapper(mole, function() {
+                        mole.css('height', originalHeight);
+                    });
+                    mole
+                        .css('height', height)
+                        .append(wrapper
+                            .css("width", mole.width())
+                            .css("position", "absolute")
+                        )
                 } else {
-                    $(this).closest(parent).each(hide);
+                    mole
+                        .children()
+                        .first()
+                        .each(hide);
                 }
+                mole.attr('whacked', true);
             }
         })
     }
 
     function run() {
-        console.log("Whackamole run");
         $('iframe').each(hide);
         $('.taboola').each(hide);
         $('.video-ads').each(hide);
@@ -59,17 +91,22 @@
         $('.js-stream-ad').each(hide);
         $('.col--advertisement').each(hide);
         $('.ad-container').closest('.ad-container').each(hide);
+        $('[id^="google_ad_"').closest('div').each(hide);
 
         hide_nested('.userContentWrapper', 'span', 'Suggested Post');
         hide_nested('.userContentWrapper', 'a', 'Travel List Challenge');
         hide_nested('.userContentWrapper', 'a', 'Sponsored');
         hide_nested('.ego_section', 'a', 'Sponsored');
+        hide_nested('[role="complementary"]', 'span', 'Sponsored');
+        hide_nested('[data-pagelet]', 'span', /S\w*p\w*o\w*n\w*s\w*o\w*r\w*e\w*d/);
+        hide_nested('[data-pagelet]', 'span', "Suggested for you");
         hide_nested('.tweet', 'a', 'Promoted');
+        hide_nested('article', 'span', 'Promoted', '14px');
         hide_nested('.ember-view', 'span', 'Promoted');
-        hide_nested('article', 'span', 'Promoted', "10px");
 
         closeYoutubeAd();
     }
+
 
     function sameDomain(url) {
         var hostname = url.split('/')[2];
@@ -98,3 +135,7 @@
         });
     }
 })();
+
+function log(message) {
+    chrome.runtime.sendMessage({kind: "log", message });
+}
