@@ -1,36 +1,40 @@
 (function WhackAMole() {
     var domain = document.location.hostname;
-    var color = "#FF0000"
+    var showAdOverride = false;
+    const WRAPPER_CSS = {
+        overflow: 'hidden',
+        display: 'block',
+        height: '14px',
+        fontSize: '10px',
+        fontFamily: 'arial',
+        textAlign: 'center',
+        lineHeight: '14px',
+        color: 'grey',
+        cursor: 'pointer',
+    };
 
     function createWrapper(mole, handler) {
         return $('<whackamole>')
-            .css({
-                overflow: 'hidden',
-                display: 'block',
-                width: mole.width(),
-                height: '14px',
-                fontSize: '10px',
-                fontFamily: 'arial',
-                textAlign: 'center',
-                lineHeight: '14px',
-                color: 'grey',
-                cursor: 'pointer',
-            })
+            .css(WRAPPER_CSS)
             .text("ad")
-            .on("click", handler)
+            .on("click", handler);
     }
 
-    function hide() {
-        var mole = $(this);
+    function updateWrappers() {
+        $('whackamole').css(WRAPPER_CSS)
+    }
+
+    function hide(mole, selector) {
         if (mole.width() && mole.height() && !mole.attr('whacked')) {
             var url = mole.attr('src') || mole.attr('data') || mole.attr('href') || '';
             if (!url || !sameDomain(url)) {
-                log(' - hide ' + (url || 'iframe'));
+                log('hide ' + selector);
                 mole.attr('whacked', true);
                 var hostname = url && url.split('/')[2];
                 if (!hostname || hostname.indexOf('.') == -1) hostname = '';
                 while (mole.parent().children().length == 1) { mole = mole.parent(); }
                 var wrapper = createWrapper(mole, function() {
+                    log(`Show Ad - ${selector}`)
                     wrapper.replaceWith(mole);
                     setTimeout(function() {
                         mole.css({
@@ -42,6 +46,73 @@
                 wrapper.append(mole);
             }
         }
+    }
+
+    function ads() {
+        return $('.video-ads').filter(function () {
+            return $(this).css("display") !== "none" && !$(this).text().match("Ad in ");
+        });
+    }
+
+    function manageYoutubeAd() {
+        if (!domain.match("youtube.com")) return;
+        closeYoutubeAd();
+        if (ads().length) {
+            silenceYoutubeAd();
+        } else {
+            unSilenceYoutubeAd();
+        }
+    }
+
+    function silenceYoutubeAd() {
+        if (showAdOverride && ads().length) return;
+        showAdOverride = false;
+        $('button[title="Mute (m)"]').click();
+        $('.video-ads').css("z-index", 100001);
+        const width = $(window).width();
+        const height = $(window).height();
+        if (!$("#whackamole-black").length) {
+            $("<div>")
+                .attr("id", "whackamole-black")
+                .css({
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    width: width,
+                    paddingLeft: Math.max(0, width/2 - 200),
+                    height: height,
+                    lineHeight: height + "px",
+                    overflow: "hidden",
+                    zIndex: 100000,
+                    fontFamily: "Arial",
+                    fontSize: 32,
+                    backgroundColor: "black",
+                    color: "white",
+                })
+                .click(function() {
+                    $(this).css({
+                        left: $(this).width(),
+                    });
+                    showAdOverride = true;
+                    unSilenceYoutubeAd();
+                })
+                .appendTo($("body"));
+        }
+        setTimeout(() => {
+            $("#whackamole-black").html(getAdInfo());
+        }, 1000);
+    }
+
+    function getAdInfo() {
+        const status = [ $(".ytp-ad-simple-ad-badge").text(), $(".ytp-ad-duration-remaining").text() ].join(" ").trim();
+        return status ? (status + " · Click to show Ad.    (<i style='font-size: 20px'>whackamole</i>)") : "Loading Ad...";
+    }
+
+    function unSilenceYoutubeAd() {
+        if (!$("#whackamole-black").length) return;
+        $("#whackamole-black").remove();
+        $('button[title="Unmute (m)"]').click();
+        $("button[title='Play (k)']").click();
     }
 
     function closeYoutubeAd() {
@@ -75,36 +146,51 @@
                     mole
                         .children()
                         .first()
-                        .each(hide);
+                        .each(function() { hide($(this), `nested ${parent}/${child}/${content}`); });
                 }
                 mole.attr('whacked', true);
             }
         })
     }
 
+    function hide_selector(selector) {
+        $(selector).each(function() { hide($(this), selector); });
+    }
+
+    function hide_closest(child, parent) {
+        $(child).each(function() {
+            $(this).closest(parent).each(function() {
+                hide($(this), `closest ${parent}/${child}`);
+            })
+        });
+    }
+
     function run() {
-        $('iframe').each(hide);
-        $('.taboola').each(hide);
-        $('.video-ads').each(hide);
-        $('.OUTBRAIN').each(hide);
-        $('.advertoriallist').each(hide);
-        $('.js-stream-ad').each(hide);
-        $('.col--advertisement').each(hide);
-        $('.ad-container').closest('.ad-container').each(hide);
-        $('[id^="google_ad_"').closest('div').each(hide);
+        hide_closest('[aria-label*="Sponsored"]', '[data-pagelet]');
+        hide_closest('.ad-container', '.ad-container');
+        hide_closest('[id^="google_ad_"', 'div');
+
+        hide_selector('iframe');
+        hide_selector('.taboola');
+        hide_selector('ad-taboola');
+        hide_selector('.video-ads');
+        hide_selector('.OUTBRAIN');
+        hide_selector('.advertoriallist');
+        hide_selector('.js-stream-ad');
+        hide_selector('.col--advertisement');
 
         hide_nested('.userContentWrapper', 'span', 'Suggested Post');
         hide_nested('.userContentWrapper', 'a', 'Travel List Challenge');
         hide_nested('.userContentWrapper', 'a', 'Sponsored');
         hide_nested('.ego_section', 'a', 'Sponsored');
         hide_nested('[role="complementary"]', 'span', 'Sponsored');
-        hide_nested('[data-pagelet]', 'span', /S\w*p\w*o\w*n\w*s\w*o\w*r\w*e\w*d/);
         hide_nested('[data-pagelet]', 'span', "Suggested for you");
         hide_nested('.tweet', 'a', 'Promoted');
         hide_nested('article', 'span', 'Promoted', '14px');
         hide_nested('.ember-view', 'span', 'Promoted');
 
-        closeYoutubeAd();
+        manageYoutubeAd();
+        updateWrappers();
     }
 
 
