@@ -1,0 +1,24 @@
+name: Submit Extension
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          cd whackamole
+          zip -r ../whackamole.zip .
+
+      - name: Browser Plugin Publish
+        uses: plasmo-corp/bpp@v1
+        with:
+          keys: ${{ secrets.SUBMIT_KEYS }}
+          artifact: whackamole.zip
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: whackamole.zip
