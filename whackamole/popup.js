@@ -1,7 +1,7 @@
-var all_link = document.getElementById('all_link');
-var site_link = document.getElementById('site_link');
-var support = document.getElementById('support');
-var domain = '???';
+var all_link = document.getElementById("all_link");
+var site_link = document.getElementById("site_link");
+var support = document.getElementById("support");
+var domain = "???";
 var disabled = {};
 
 function setSiteLinkText() {
@@ -10,31 +10,35 @@ function setSiteLinkText() {
 }
 
 function setAllLinkText() {
-  var action = disabled['*'] ? "Enable" : "Disable";
+  var action = disabled["*"] ? "Enable" : "Disable";
   all_link.innerText = action + " Whack-a-mole";
 }
 
-function runInTab(fn) {
-  var options = {'active': true, 'windowId': chrome.windows.WINDOW_ID_CURRENT};
-  chrome.tabs.query(options, function(tabs){ fn(tabs[0]); });
+function runInTab(info, fn) {
+  var options = { active: true, windowId: chrome.windows.WINDOW_ID_CURRENT };
+  console.log("runInTab", info, options);
+  chrome.tabs.query(options, function (tabs) {
+    console.log("run function", tabs[0]);
+    fn(tabs[0]);
+  });
 }
 
-runInTab(function(tab) {
-  chrome.storage.sync.get('*', function(result) {
-    disabled['*'] = result['*'] == true;
-    setAllLinkText()
-    if (!disabled['*']) {
-      domain = tab.url.split('/')[2];
+runInTab("setup", function (tab) {
+  chrome.storage.sync.get("*", function (result) {
+    disabled["*"] = result["*"] == true;
+    setAllLinkText();
+    if (!disabled["*"] && tab.url) {
+      domain = tab.url.split("/")[2];
       chrome.storage.sync.get(domain, function (result) {
         disabled[domain] = result[domain] == true;
         setSiteLinkText();
-      })
+      });
     }
-  })
+  });
 });
 
-all_link.addEventListener("click", function() {
-  toggle('*');
+all_link.addEventListener("click", function () {
+  toggle("*");
 });
 
 site_link.addEventListener("click", function () {
@@ -42,30 +46,42 @@ site_link.addEventListener("click", function () {
 });
 
 function reload() {
-    runInTab(function(tab) {
-      chrome.tabs.executeScript(tab.id, {code: 'window.location.reload();'});
-      window.close();
+  runInTab("reload", function (tab) {
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      function: () => {
+        window.location.reload();
+      },
+      args: [],
     });
+    window.close();
+  });
 }
 
 function toggle(target) {
   disabled[target] = disabled[target] != true;
-  chrome.storage.sync.set(disabled, function() {
-      if (chrome.runtime.lastError) {
-        chrome.storage.sync.clear(function() {
-            chrome.storage.sync.set(disabled, function() {
-                reload();
-            });
-        });
-      } else {
+  chrome.storage.sync.set(disabled, function () {
+    if (chrome.runtime.lastError) {
+      chrome.storage.sync.clear(function () {
+        chrome.storage.sync.set(disabled, function () {
           reload();
-      }
+        });
+      });
+    } else {
+      reload();
+    }
   });
 }
 
-support.addEventListener("click", function() {
-  runInTab(function(tab) {
-    chrome.tabs.executeScript(tab.id, {code: 'window.open("http://chrislaffra.com/whackamole");'});
+support.addEventListener("click", function () {
+  runInTab("click", function (tab) {
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      function: () => {
+        window.open("http://chrislaffra.com/whackamole");
+      },
+      args: [],
+    });
     window.close();
   });
 });

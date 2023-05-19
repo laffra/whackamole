@@ -5,19 +5,35 @@
         overflow: 'hidden',
         display: 'block',
         height: '14px',
-        fontSize: '10px',
-        fontFamily: 'arial',
         textAlign: 'center',
-        lineHeight: '14px',
+        cursor: 'pointer',
+    };
+    const WRAPPER_LABEL_CSS = {
+        display: 'block',
+        borderWidth: 1,
+        borderStyle: 'solid',
+        borderColor: 'gray',
+        lineHeight: '10px',
+        padding: 1,
+        width: '14px',
+        margin: 'auto',
+        borderRadius: 9,
+        fontSize: '8px',
+        fontFamily: 'arial',
         color: 'grey',
+        backgroundColor: 'lightyellow',
         cursor: 'pointer',
     };
 
     function createWrapper(mole, handler) {
         return $('<whackamole>')
             .css(WRAPPER_CSS)
-            .text("ad")
-            .on("click", handler);
+            .on("click", handler)
+            .append(
+                $('<div>')
+                    .css(WRAPPER_LABEL_CSS)
+                    .text("ad")
+            );
     }
 
     function updateWrappers() {
@@ -28,7 +44,7 @@
         if (mole.width() && mole.height() && !mole.attr('whacked')) {
             var url = mole.attr('src') || mole.attr('data') || mole.attr('href') || '';
             if (!url || !sameDomain(url)) {
-                log('hide ' + selector);
+                log('hide ' + mole.attr("title") + " " + mole.attr("src") + " " + selector);
                 mole.attr('whacked', true);
                 var hostname = url && url.split('/')[2];
                 if (!hostname || hostname.indexOf('.') == -1) hostname = '';
@@ -44,6 +60,7 @@
                 });
                 mole.replaceWith(wrapper);
                 wrapper.append(mole);
+                log('replaced with wrapper' + selector);
             }
         }
     }
@@ -78,9 +95,9 @@
                     position: "absolute",
                     left: 0,
                     top: 0,
-                    width: width,
+                    width: width * 2,
                     paddingLeft: Math.max(0, width/2 - 200),
-                    height: height,
+                    height: height * 2,
                     lineHeight: height + "px",
                     overflow: "hidden",
                     zIndex: 100000,
@@ -125,31 +142,13 @@
         $("button.ytp-ad-overlay-close-button").click();
     }
 
-    function hide_nested(parent, child, content, height) {
-        $(parent + ' ' + child).each(function() {
-            const mole = $(this).closest(parent);
+    function hide_matching(parentSelector, child) {
+        child.each(function() {
+            $(this).css('background', 'yellow');
+            const mole = $(this).closest(parentSelector);
             if (mole.attr("whacked")) return;
-            var text = getComputedStyle(this,':after').content + ' ' + $(this).text();
-            if (text.match(content)) {
-                if (height) {
-                    const originalHeight = mole.height();
-                    const wrapper = createWrapper(mole, function() {
-                        mole.css('height', originalHeight);
-                    });
-                    mole
-                        .css('height', height)
-                        .append(wrapper
-                            .css("width", mole.width())
-                            .css("position", "absolute")
-                        )
-                } else {
-                    mole
-                        .children()
-                        .first()
-                        .each(function() { hide($(this), `nested ${parent}/${child}/${content}`); });
-                }
-                mole.attr('whacked', true);
-            }
+            hide(mole, `hide matching ${child}`);
+            mole.attr('whacked', true);
         })
     }
 
@@ -164,13 +163,19 @@
             })
         });
     }
+    
+    function hide_iframes() {
+        $('iframe').not('[src*="media.licdn.com"]').each(function() { hide($(this), "iframe:" + $(this).attr("src")); });
+    }
 
     function run() {
+        log("whackamole: run: " + domain);
         hide_closest('[aria-label*="Sponsored"]', '[data-pagelet]');
         hide_closest('.ad-container', '.ad-container');
         hide_closest('[id^="google_ad_"', 'div');
 
-        hide_selector('iframe');
+        hide_iframes();
+
         hide_selector('.taboola');
         hide_selector('ad-taboola');
         hide_selector('.video-ads');
@@ -178,16 +183,26 @@
         hide_selector('.advertoriallist');
         hide_selector('.js-stream-ad');
         hide_selector('.col--advertisement');
+        hide_selector('[id*="sponsored"]');
+        hide_selector('[data-analytics*="outbrain"]');
 
-        hide_nested('.userContentWrapper', 'span', 'Suggested Post');
-        hide_nested('.userContentWrapper', 'a', 'Travel List Challenge');
-        hide_nested('.userContentWrapper', 'a', 'Sponsored');
-        hide_nested('.ego_section', 'a', 'Sponsored');
-        hide_nested('[role="complementary"]', 'span', 'Sponsored');
-        hide_nested('[data-pagelet]', 'span', "Suggested for you");
-        hide_nested('.tweet', 'a', 'Promoted');
-        hide_nested('article', 'span', 'Promoted', '14px');
-        hide_nested('.ember-view', 'span', 'Promoted');
+        if (domain.match("facebook.com")) {
+            hide_matching('div[aria-describedby]', $('use').filter(function(){
+                return $($(this).attr("href")).text() === 'Sponsored' || $($(this).attr("xlink:href")).text() === 'Sponsored';
+            }));
+        }
+
+        if (domain.match("linkedin.com")) {
+            hide_matching('.ember-view', $('span').filter(function(){
+                return $(this).text() === 'Promoted';
+            }));
+        }
+
+        if (domain.match("twitter.com")) {
+            hide_matching('article', $('span').filter(function(){
+                return $(this).text() === 'Promoted';
+            }));
+        }
 
         manageYoutubeAd();
         updateWrappers();
