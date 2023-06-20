@@ -2,7 +2,7 @@
   "name": "WhackAMole Ad-Blocker",
   "short_name": "WhackAMole",
   "description": "WhackAMole Ad-Blocker",
-  "version": "3.3",
+  "version": "3.5",
   "permissions": [
     "activeTab",
     "storage",

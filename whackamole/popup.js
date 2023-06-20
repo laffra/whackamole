@@ -20,7 +20,7 @@ function setSiteLinkText() {
 // Set the text for all sites based on whether all domains are disabled or not 
 function setAllLinkText() {
   var action = disabled["*"] ? "Enable" : "Disable";
-  all_link.innerText = action + " Whack-a-mole";
+  all_link.innerText = action + " Whack-a-mole 3.5";
 }
 
 // Run a function in the active tab

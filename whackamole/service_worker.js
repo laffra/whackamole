@@ -6,7 +6,9 @@
 * @param {object} tab - Details about the updated tab.
 */
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-  chrome.pageAction.show(tabId);
+  if (chrome.pageAction) {
+    chrome.pageAction.show(tabId);
+  }
 });
 
 
